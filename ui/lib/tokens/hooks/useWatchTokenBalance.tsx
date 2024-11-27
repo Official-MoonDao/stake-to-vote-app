@@ -18,7 +18,7 @@ export default function useWatchTokenBalance(
     const wallet = wallets[selectedWallet]
 
     async function handleBalanceChange() {
-      if (!isMounted) return
+      if (!isMounted || !tokenContract || !wallet?.address) return
       const balance = await tokenContract.call('balanceOf', [wallet.address])
       setTokenBalance(+balance.toString() / 10 ** decimals)
     }
@@ -27,7 +27,6 @@ export default function useWatchTokenBalance(
       if (tokenContract && wallet) {
         provider = await wallet.getEthersProvider()
         await handleBalanceChange()
-
         provider.on('block', handleBalanceChange)
       }
     }
