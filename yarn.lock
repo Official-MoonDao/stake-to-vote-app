@@ -2,3 +2,12 @@
 # yarn lockfile v1
 
 
+"@types/cytoscape@^3.21.8":
+  version "3.21.8"
+  resolved "https://registry.npmjs.org/@types/cytoscape/-/cytoscape-3.21.8.tgz"
+  integrity sha512-6Bo9ZDrv0vfwe8Sg/ERc5VL0yU0gYvP4dgZi0fAXYkKHfyHaNqWRMcwYm3mu4sLsXbB8ZuXE75sR7qnaOL5JgQ==
+
+cytoscape@^3.30.4:
+  version "3.30.4"
+  resolved "https://registry.npmjs.org/cytoscape/-/cytoscape-3.30.4.tgz"
+  integrity sha512-OxtlZwQl1WbwMmLiyPSEBuzeTIQnwZhJYYWFzZ2PhEHVFwpeaqNIkUzSiso00D98qk60l8Gwon2RP304d3BJ1A==

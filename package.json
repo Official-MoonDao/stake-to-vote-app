@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/cytoscape": "^3.21.8",
+    "cytoscape": "^3.30.4"
+  }
+}

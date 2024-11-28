@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import IndexCard from '../layout/IndexCard';
 import IndexCardGrid from "../layout/IndexCardGrid";
+import cytoscape from 'cytoscape';
 
 const indexCardData = [
   {
@@ -79,15 +80,148 @@ const indexCardData = [
 
 export default function Callout3() {
     const [singleCol, setSingleCol] = useState(false);
+    const cyRef = useRef(null);
+
+    useEffect(() => {
+        if (!cyRef.current) return;
+
+        const elements = {
+            nodes: [
+                { data: { id: 'lisa', name: 'Lisa Patel', role: 'Team Lead', 
+                    image: '/assets/team/leader.svg' }},
+                { data: { id: 'sarah', name: 'Sarah Chen', role: 'Software Engineer', 
+                    image: '/assets/team/engineer.svg' }},
+                { data: { id: 'mike', name: 'Mike Rodriguez', role: 'Product Manager', 
+                    image: '/assets/team/product.svg' }},
+                { data: { id: 'emma', name: 'Emma Taylor', role: 'Data Scientist', 
+                    image: '/assets/team/data.svg' }},
+                { data: { id: 'james', name: 'James Kim', role: 'UX Designer', 
+                    image: '/assets/team/designer.svg' }},
+                { data: { id: 'alex', name: 'Alex Singh', role: 'Developer', 
+                    image: '/assets/team/developer.svg' }},
+                { data: { id: 'david', name: 'David Foster', role: 'DevOps', 
+                    image: '/assets/team/devops.svg' }},
+                { data: { id: 'maria', name: 'Maria Garcia', role: 'QA Engineer', 
+                    image: '/assets/team/qa.svg' }},
+                { data: { id: 'ryan', name: 'Ryan Cooper', role: 'Backend Dev', 
+                    image: '/assets/team/backend.svg' }},
+                { data: { id: 'julia', name: 'Julia Zhang', role: 'Frontend Dev', 
+                    image: '/assets/team/frontend.svg' }}
+            ],
+            edges: [
+                { data: { source: 'lisa', target: 'sarah', relationship: 'Manages' } },
+                { data: { source: 'lisa', target: 'mike', relationship: 'Coordinates' } },
+                { data: { source: 'lisa', target: 'emma', relationship: 'Oversees' } },
+                { data: { source: 'lisa', target: 'james', relationship: 'Directs' } },
+                { data: { source: 'lisa', target: 'alex', relationship: 'Manages' } },
+                { data: { source: 'lisa', target: 'david', relationship: 'Supervises' } },
+                { data: { source: 'lisa', target: 'maria', relationship: 'Manages' } },
+                { data: { source: 'lisa', target: 'ryan', relationship: 'Oversees' } },
+                { data: { source: 'lisa', target: 'julia', relationship: 'Directs' } }
+            ]
+        };
+
+        const cy = cytoscape({
+            container: cyRef.current,
+            elements: elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': 'transparent',
+                        'border-width': 3,
+                        'border-color': '#00308F',
+                        'label': 'data(name)',
+                        'color': '#000000',
+                        'text-valign': 'bottom',
+                        'text-halign': 'center',
+                        'text-margin-y': 5,
+                        'width': 50,
+                        'height': 50,
+                        'font-size': '8px',
+                        'background-image': 'data(image)',
+                        'background-fit': 'cover',
+                        'background-clip': 'none'
+                    }
+                },
+                {
+                    selector: '#lisa',
+                    style: {
+                        'border-color': '#B22222',
+                        'border-width': 4,
+                        'width': 60,
+                        'height': 60
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#666',
+                        'curve-style': 'bezier',
+                        'label': 'data(relationship)',
+                        'font-size': '8px',
+                        'text-rotation': 'autorotate',
+                        'text-margin-y': -10,
+                        'text-background-color': '#fff',
+                        'text-background-opacity': 1,
+                        'text-background-padding': '2px'
+                    }
+                },
+                {
+                    selector: 'edge[source = "lisa"]',
+                    style: {
+                        'line-color': '#B22222',
+                        'width': 3
+                    }
+                }
+            ],
+            layout: {
+                name: 'concentric',
+                concentric: function(node) {
+                    return node.id() === 'lisa' ? 2 : 1;
+                },
+                levelWidth: function() { return 1; },
+                minNodeSpacing: 50,
+                animate: false
+            }
+        });
+
+        cy.nodes().ungrabify().grabify();
+        cy.userZoomingEnabled(true);
+        cy.userPanningEnabled(true);
+
+        cy.on('mouseover', 'node', function(evt){
+            const node = evt.target;
+            node.style({
+                'label': node.data('name') + '\n' + node.data('role')
+            });
+        });
+
+        cy.on('mouseout', 'node', function(evt){
+            const node = evt.target;
+            node.style({
+                'label': node.data('name')
+            });
+        });
+
+        return () => {
+            cy.destroy();
+        };
+    }, []);
 
     return ( 
         <section id="callout3-container" 
-          className="relative items-start max-w-[1200px] justify-end md:items-start lg:items-start md:justify-end lg:justify-center mt-[5vmax]"
+          className="relative items-start w-full justify-end md:items-start lg:items-start md:justify-end lg:justify-center mt-[5vmax]"
           >
           <div id="background-elements" 
             className="overflow-visible"
           ></div>
           <h2 className="header text-center font-GoodTimes pb-5">What MoonDAO Does</h2>  
+          <div 
+            ref={cyRef}
+            className="w-full h-[80vh] mx-auto mb-10"
+          />
           <div id="cards-container" 
             className="rounded-[5vmax] rounded-tr-[0px] p-5 md:p-10 overflow-hidden max-w-[1200px]"
             >
