@@ -20,9 +20,6 @@ export default function Join() {
   const [selectedTier, setSelectedTier] = useState<'team' | 'citizen'>()
   const [applyModalEnabled, setApplyModalEnabled] = useState(false)
 
-  // Ensures default chain settings
-  useChainDefault()
-
   // Render CreateCitizen component if 'citizen' is selected
   if (selectedTier === 'citizen') {
     return (
