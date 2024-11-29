@@ -1,50 +1,38 @@
 //Citizen Profile
 import {
   GlobeAltIcon,
-  GlobeAmericasIcon,
   MapPinIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline'
-import { Arbitrum, Sepolia } from '@thirdweb-dev/chains'
 import { ThirdwebNftMedia, useAddress, useContract } from '@thirdweb-dev/react'
 import {
   CITIZEN_ADDRESSES,
-  CITIZEN_TABLE_NAMES,
   JOBS_TABLE_ADDRESSES,
   MARKETPLACE_TABLE_ADDRESSES,
   MOONEY_ADDRESSES,
-  TABLELAND_ENDPOINT,
   TEAM_ADDRESSES,
   VMOONEY_ADDRESSES,
 } from 'const/config'
 import { HATS_ADDRESS } from 'const/config'
-import { blockedCitizens } from 'const/whitelist'
-import { GetServerSideProps } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useContext, useEffect, useState } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useCitizenData } from '@/lib/citizen/useCitizenData'
 import { useTeamWearer } from '@/lib/hats/useTeamWearer'
 import useNewestProposals from '@/lib/nance/useNewestProposals'
-import { generatePrettyLinks } from '@/lib/subscription/pretty-links'
-import { useTeamData } from '@/lib/team/useTeamData'
-import ChainContext from '@/lib/thirdweb/chain-context'
 import { useHandleRead } from '@/lib/thirdweb/hooks'
-import { useChainDefault } from '@/lib/thirdweb/hooks/useChainDefault'
 import { useNativeBalance } from '@/lib/thirdweb/hooks/useNativeBalance'
-import { initSDK } from '@/lib/thirdweb/thirdweb'
 import { useTotalMooneyBalance } from '@/lib/tokens/hooks/useTotalMooneyBalance'
 import useTotalVP from '@/lib/tokens/hooks/useTotalVP'
-import { CopyIcon, DiscordIcon, TwitterIcon } from '@/components/assets'
+import { DiscordIcon, TwitterIcon } from '@/components/assets'
 import { Hat } from '@/components/hats/Hat'
 import Address from '@/components/layout/Address'
 import Container from '@/components/layout/Container'
 import ContentLayout from '@/components/layout/ContentLayout'
 import Frame from '@/components/layout/Frame'
 import Head from '@/components/layout/Head'
-import { LoadingSpinner } from '@/components/layout/LoadingSpinner'
 import { NoticeFooter } from '@/components/layout/NoticeFooter'
 import StandardButton from '@/components/layout/StandardButton'
 import Card from '@/components/subscription/Card'
@@ -56,18 +44,17 @@ import LatestJobs from '@/components/subscription/LatestJobs'
 import NewMarketplaceListings from '@/components/subscription/NewMarketplaceListings'
 import OpenVotes from '@/components/subscription/OpenVotes'
 import { SubscriptionModal } from '@/components/subscription/SubscriptionModal'
-import CitizenABI from '../../const/abis/Citizen.json'
 import JobsABI from '../../const/abis/JobBoardTable.json'
 import MarketplaceABI from '../../const/abis/MarketplaceTable.json'
 
-export default function CitizenDetailPage({
+export default function CitizenProfilePage({
+  chain,
   nft,
   tokenId,
   imageIpfsLink,
 }: any) {
   const router = useRouter()
   const address = useAddress()
-  const { selectedChain, setSelectedChain } = useContext(ChainContext)
 
   const [subModalEnabled, setSubModalEnabled] = useState(false)
   const [citizenMetadataModalEnabled, setCitizenMetadataModalEnabled] =
@@ -77,20 +64,18 @@ export default function CitizenDetailPage({
 
   // Data
   const { contract: citizenContract } = useContract(
-    CITIZEN_ADDRESSES[selectedChain.slug]
+    CITIZEN_ADDRESSES[chain.slug]
   )
 
-  const { contract: teamContract } = useContract(
-    TEAM_ADDRESSES[selectedChain.slug]
-  )
+  const { contract: teamContract } = useContract(TEAM_ADDRESSES[chain.slug])
 
   const { contract: marketplaceTableContract } = useContract(
-    MARKETPLACE_TABLE_ADDRESSES[selectedChain.slug],
+    MARKETPLACE_TABLE_ADDRESSES[chain.slug],
     MarketplaceABI
   )
 
   const { contract: jobTableContract } = useContract(
-    JOBS_TABLE_ADDRESSES[selectedChain.slug],
+    JOBS_TABLE_ADDRESSES[chain.slug],
     JobsABI
   )
 
@@ -107,12 +92,10 @@ export default function CitizenDetailPage({
   // Balances
   const nativeBalance = useNativeBalance()
 
-  const { contract: mooneyContract } = useContract(
-    MOONEY_ADDRESSES[selectedChain.slug]
-  )
+  const { contract: mooneyContract } = useContract(MOONEY_ADDRESSES[chain.slug])
   const MOONEYBalance = useTotalMooneyBalance(isGuest ? address : nft?.owner)
   const { contract: vMooneyContract } = useContract(
-    VMOONEY_ADDRESSES[selectedChain.slug]
+    VMOONEY_ADDRESSES[chain.slug]
   )
 
   const VMOONEYBalance = useTotalVP(nft?.owner)
@@ -123,14 +106,11 @@ export default function CitizenDetailPage({
   ])
 
   // Hats
-  const hats = useTeamWearer(teamContract, selectedChain, nft?.owner)
+  const hats = useTeamWearer(teamContract, chain, nft?.owner)
   const { contract: hatsContract } = useContract(HATS_ADDRESS)
-  const { isManager } = useTeamData(hatsContract, address, nft)
 
   //Nance
   const { proposals, packet, votingInfoMap } = useNewestProposals(100)
-
-  useChainDefault()
 
   const ProfileHeader = (
     <div id="citizenheader-container">
@@ -263,47 +243,47 @@ export default function CitizenDetailPage({
                       </div>
                     ) : null}
                     {/* {address === nft.owner ? (
-                      <div id="manager-container">
-                        {expiresAt && (
-                          <div
-                            id="expires-container"
-                            className="flex flex-col gap-4 items-start"
-                          >
-                            <div className="rounded-[2vmax] rounded-tl-[10px] md:rounded-tl-[2vmax] md:rounded-bl-[10px] overflow-hidden">
-                              <div
-                                id="extend-sub-button"
-                                className="gradient-2 text-sm"
-                              >
-                                <Button
-                                  onClick={() => {
-                                    if (address === nft?.owner)
-                                      setSubModalEnabled(true)
-                                    else
-                                      return toast.error(
-                                        `Connect the entity admin wallet or multisig to extend the subscription.`
-                                      )
-                                  }}
+                        <div id="manager-container">
+                          {expiresAt && (
+                            <div
+                              id="expires-container"
+                              className="flex flex-col gap-4 items-start"
+                            >
+                              <div className="rounded-[2vmax] rounded-tl-[10px] md:rounded-tl-[2vmax] md:rounded-bl-[10px] overflow-hidden">
+                                <div
+                                  id="extend-sub-button"
+                                  className="gradient-2 text-sm"
                                 >
-                                  {'Extend Plan'}
-                                </Button>
+                                  <Button
+                                    onClick={() => {
+                                      if (address === nft?.owner)
+                                        setSubModalEnabled(true)
+                                      else
+                                        return toast.error(
+                                          `Connect the entity admin wallet or multisig to extend the subscription.`
+                                        )
+                                    }}
+                                  >
+                                    {'Extend Plan'}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <></>
-                    )} */}
+                          )}
+                        </div>
+                      ) : (
+                        <></>
+                      )} */}
                   </div>
                 </div>
                 {/* {address === nft.owner ? (
-                  <p className="opacity-50 mt-2 lg:ml-5 text-sm">
-                    {'Exp: '}
-                    {new Date(expiresAt?.toString() * 1000).toLocaleString()}
-                  </p>
-                ) : (
-                  <></>
-                )} */}
+                    <p className="opacity-50 mt-2 lg:ml-5 text-sm">
+                      {'Exp: '}
+                      {new Date(expiresAt?.toString() * 1000).toLocaleString()}
+                    </p>
+                  ) : (
+                    <></>
+                  )} */}
                 <div className="mt-4 lg:ml-5">
                   <Address address={isGuest ? address : nft.owner} />
                 </div>
@@ -355,13 +335,13 @@ export default function CitizenDetailPage({
         {citizenMetadataModalEnabled && (
           <CitizenMetadataModal
             nft={nft}
-            selectedChain={selectedChain}
+            selectedChain={chain}
             setEnabled={setCitizenMetadataModalEnabled}
           />
         )}
         {subModalEnabled && (
           <SubscriptionModal
-            selectedChain={selectedChain}
+            selectedChain={chain}
             setEnabled={setSubModalEnabled}
             nft={nft}
             subscriptionContract={citizenContract}
@@ -457,7 +437,7 @@ export default function CitizenDetailPage({
                         className="py-3 gradient-16 rounded-[20px]"
                       >
                         <Hat
-                          selectedChain={selectedChain}
+                          selectedChain={chain}
                           hat={hat}
                           hatsContract={hatsContract}
                           teamImage
@@ -480,7 +460,7 @@ export default function CitizenDetailPage({
                   topLeft="0px"
                 >
                   <NewMarketplaceListings
-                    selectedChain={selectedChain}
+                    selectedChain={chain}
                     teamContract={teamContract}
                     marketplaceTableContract={marketplaceTableContract}
                   />
@@ -530,91 +510,4 @@ export default function CitizenDetailPage({
       </ContentLayout>
     </Container>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const tokenIdOrName: any = params?.tokenIdOrName
-
-  let nft, tokenId, imageIpfsLink
-  if (tokenIdOrName === 'guest') {
-    nft = {
-      metadata: {
-        name: 'Your Name Here',
-        description:
-          'Start your journey with the Space Acceleration Network by funding your wallet and becoming a Citizen to unlock a myriad of benefits.',
-        image: '/assets/citizen-default.png',
-        uri: '',
-        id: 'guest',
-        attributes: [
-          {
-            trait_type: 'location',
-            value: '',
-          },
-          {
-            trait_type: 'view',
-            value: 'public',
-          },
-        ],
-      },
-      owner: '',
-    }
-
-    tokenId = 'guest'
-
-    imageIpfsLink = ''
-  } else {
-    const chain =
-      process.env.NEXT_PUBLIC_CHAIN === 'mainnet' ? Arbitrum : Sepolia
-    const sdk = initSDK(chain)
-
-    const statement = `SELECT name, id FROM ${CITIZEN_TABLE_NAMES[chain.slug]}`
-    const allCitizensRes = await fetch(
-      `${TABLELAND_ENDPOINT}?statement=${statement}`
-    )
-    const allCitizens = await allCitizensRes.json()
-
-    const { prettyLinks } = generatePrettyLinks(allCitizens, {
-      allHaveTokenId: true,
-    })
-
-    if (!Number.isNaN(Number(tokenIdOrName))) {
-      tokenId = tokenIdOrName
-    } else {
-      tokenId = prettyLinks[tokenIdOrName]
-    }
-
-    if (tokenId === undefined) {
-      return {
-        notFound: true,
-      }
-    }
-
-    const citizenContract = await sdk.getContract(
-      CITIZEN_ADDRESSES[chain.slug],
-      CitizenABI
-    )
-    nft = await citizenContract.erc721.get(tokenId)
-
-    if (
-      !nft ||
-      !nft.metadata.uri ||
-      blockedCitizens.includes(nft.metadata.id)
-    ) {
-      return {
-        notFound: true,
-      }
-    }
-
-    const rawMetadataRes = await fetch(nft.metadata.uri)
-    const rawMetadata = await rawMetadataRes.json()
-    imageIpfsLink = rawMetadata.image
-  }
-
-  return {
-    props: {
-      nft,
-      tokenId,
-      imageIpfsLink,
-    },
-  }
 }
