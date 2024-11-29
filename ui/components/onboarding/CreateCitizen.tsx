@@ -35,6 +35,7 @@ import Footer from '../layout/Footer'
 import StandardButton from '../layout/StandardButton'
 import { Steps } from '../layout/Steps'
 import { PrivyWeb3Button } from '../privy/PrivyWeb3Button'
+import NetworkSelector from '../thirdweb/NetworkSelector'
 import { ImageGenerator } from './CitizenImageGenerator'
 import { StageButton } from './StageButton'
 import { StageContainer } from './StageContainer'
@@ -423,6 +424,10 @@ export default function CreateCitizen({
                       .
                     </p>
                   </label>
+                </div>
+                <div className="p-3 flex flex-row items-center">
+                  <p>Select a chain:</p>
+                  <NetworkSelector />
                 </div>
                 <PrivyWeb3Button
                   id="citizen-checkout-button"
