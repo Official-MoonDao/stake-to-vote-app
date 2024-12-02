@@ -49,10 +49,10 @@ export default function Callout2() {
             backgroundColor="bg-white"
             textColor="text-dark-cool"
             borderRadius="rounded-tl-[10px] rounded-[2vmax]"
-            link="/network"
+            link="/map"
             paddingOnHover="pl-5"
           >
-            Explore the Network
+            Explore the Network Map
           </StandardButton>
         </div>
       </div>
