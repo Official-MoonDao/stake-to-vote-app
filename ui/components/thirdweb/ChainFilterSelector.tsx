@@ -1,24 +1,31 @@
 import {
   ChartBarSquareIcon,
   ChevronDownIcon,
-  SignalIcon,
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import Portal from '../layout/Portal'
 
-export default function AnalyticsChainSelector({
-  analyticsChain,
-  setAnalyticsChain,
-}: any) {
+interface ChainFilterSelectorProps {
+  chainFilter: string
+  setChainFilter: (chain: string) => void
+}
+
+export default function ChainFilterSelector({
+  chainFilter,
+  setChainFilter,
+}: ChainFilterSelectorProps) {
   const [dropdown, setDropdown] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLDivElement>(null)
 
   function selectChain(chain: string) {
-    setAnalyticsChain(chain)
+    setChainFilter(chain)
     setDropdown(false)
   }
 
   function handleClickOutside({ target }: any) {
-    if (target.closest('#network-selector')) return
+    if (target.closest('#network-selector-dropdown')) return
     setDropdown(false)
   }
   useEffect(() => {
@@ -26,39 +33,54 @@ export default function AnalyticsChainSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => {
+    if (dropdown && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      })
+    }
+  }, [dropdown])
+
   return (
-    <div id="network-selector" className="w-auto flex flex-col">
+    <div id="network-selector" className="w-auto flex flex-col cursor-pointer">
       <div
+        ref={buttonRef}
         id="network-selector-dropdown-button"
-        className="flex items-center gap-2 p-2 bg-darkest-cool rounded-lg"
+        className="flex items-center gap-2 p-2 gradient-2 rounded-lg"
         onClick={(e) => {
           if (e.detail === 0) return e.preventDefault()
           setDropdown((prev) => !prev)
         }}
       >
-        {analyticsChain === 'all' ? (
+        {chainFilter === 'all' ? (
           <ChartBarSquareIcon height={24} width={24} />
         ) : (
           <Image
             className="h-6 w-6"
-            src={`/icons/networks/${analyticsChain}.svg`}
+            src={`/icons/networks/${chainFilter}.svg`}
             width={24}
             height={24}
-            alt={analyticsChain}
+            alt={chainFilter}
           />
         )}
         <span>
-          {analyticsChain.charAt(0).toUpperCase() + analyticsChain.slice(1)}
+          {chainFilter.charAt(0).toUpperCase() + chainFilter.slice(1)}
         </span>
         <button className={`${dropdown && 'rotate-180'}`}>
           <ChevronDownIcon height={14} width={14} />
         </button>
       </div>
-      <div className="relative right-[125px]">
-        {dropdown && (
+      {dropdown && (
+        <Portal>
           <div
             id="network-selector-dropdown"
-            className="w-[250px] absolute flex flex-col items-start gap-2 text-black z-10"
+            className="fixed flex flex-col items-start gap-2 text-black z-10 w-[250px]"
+            style={{
+              top: `${dropdownPosition.top + 10}px`,
+              left: `${dropdownPosition.left}px`,
+            }}
           >
             <button
               type="button"
@@ -104,9 +126,23 @@ export default function AnalyticsChainSelector({
               />
               {'Arbitrum'}
             </button>
+            {process.env.NEXT_PUBLIC_ENV === 'dev' && (
+              <button
+                className="w-full flex gap-2 bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
+                onClick={() => selectChain('sepolia')}
+              >
+                <Image
+                  src="/icons/networks/sepolia.svg"
+                  width={24}
+                  height={24}
+                  alt="Sepolia"
+                />
+                {'Sepolia'}
+              </button>
+            )}
           </div>
-        )}
-      </div>
+        </Portal>
+      )}
     </div>
   )
 }

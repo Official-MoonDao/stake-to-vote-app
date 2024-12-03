@@ -6,7 +6,7 @@ import {
   Polygon,
 } from '@thirdweb-dev/chains'
 
-const thirdwebShortSlugs = {
+export const shortSlugsToChains = {
   eth: Ethereum,
   matic: Polygon,
   arb: Arbitrum,
@@ -14,4 +14,10 @@ const thirdwebShortSlugs = {
   base: Base,
 }
 
-export default thirdwebShortSlugs
+export const slugsToShortSlugs = {
+  ethereum: 'eth',
+  polygon: 'polygon',
+  arbitrum: 'arb',
+  ...(process.env.NEXT_PUBLIC_ENV === 'dev' && { sepolia: 'sep' }),
+  base: 'base',
+}

@@ -8,6 +8,7 @@ import {
   generatePrettyLink,
   generatePrettyLinkWithId,
 } from '@/lib/subscription/pretty-links'
+import { slugsToShortSlugs } from '@/lib/thirdweb/thirdwebSlugs'
 import Frame from '../layout/Frame'
 import StandardButton from '../layout/StandardButton'
 
@@ -24,6 +25,7 @@ interface CardProps {
   entitytype?: string
   orgid?: string
   metadata?: any
+  slug?: string
   owner?: string
   type?: string
   horizontalscroll?: boolean
@@ -44,6 +46,7 @@ export default function Card({
   entitytype,
   orgid,
   metadata,
+  slug,
   owner,
   type,
   role,
@@ -257,6 +260,8 @@ export default function Card({
             setIsLoadingRoute(true)
             const route = await router.push(
               `/${type === 'team' ? 'team' : 'citizen'}/${
+                slugsToShortSlugs?.[slug as keyof typeof slugsToShortSlugs]
+              }/${
                 type === 'team'
                   ? generatePrettyLink(metadata.name)
                   : generatePrettyLinkWithId(metadata.name, metadata.id)

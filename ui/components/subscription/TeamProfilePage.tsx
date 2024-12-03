@@ -1,6 +1,5 @@
 // Team Profile Page
 import {
-  ArrowUpRightIcon,
   BanknotesIcon,
   BuildingStorefrontIcon,
   ChatBubbleLeftIcon,
@@ -8,7 +7,6 @@ import {
   GlobeAltIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline'
-import { Arbitrum, Sepolia } from '@thirdweb-dev/chains'
 import {
   ThirdwebNftMedia,
   useAddress,
@@ -23,12 +21,7 @@ import {
   JOBS_TABLE_ADDRESSES,
   MOONEY_ADDRESSES,
   MARKETPLACE_TABLE_ADDRESSES,
-  TABLELAND_ENDPOINT,
-  DEFAULT_CHAIN,
-  TEAM_TABLE_NAMES,
 } from 'const/config'
-import { blockedTeams } from 'const/whitelist'
-import { GetServerSideProps } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -36,11 +29,8 @@ import { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import CitizenContext from '@/lib/citizen/citizen-context'
 import { useSubHats } from '@/lib/hats/useSubHats'
-import { generatePrettyLinks } from '@/lib/subscription/pretty-links'
 import { useTeamData } from '@/lib/team/useTeamData'
-import ChainContext from '@/lib/thirdweb/chain-context'
 import { useChainDefault } from '@/lib/thirdweb/hooks/useChainDefault'
-import { initSDK } from '@/lib/thirdweb/thirdweb'
 import { useMOONEYBalance } from '@/lib/tokens/mooney-token'
 import { TwitterIcon } from '@/components/assets'
 import Address from '@/components/layout/Address'
@@ -66,14 +56,17 @@ import JobBoardTableABI from '../../const/abis/JobBoardTable.json'
 import MarketplaceTableABI from '../../const/abis/MarketplaceTable.json'
 import TeamABI from '../../const/abis/Team.json'
 
-export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
+export default function TeamProfilePage({
+  chain,
+  tokenId,
+  nft,
+  imageIpfsLink,
+}: any) {
   const router = useRouter()
 
   const sdk = useSDK()
   const address = useAddress()
 
-  //privy
-  const { selectedChain, setSelectedChain } = useContext(ChainContext)
   const { citizen } = useContext(CitizenContext)
   const [teamMetadataModalEnabled, setTeamMetadataModalEnabled] =
     useState(false)
@@ -85,21 +78,21 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
 
   //Entity Data
   const { contract: teamContract } = useContract(
-    TEAM_ADDRESSES[selectedChain.slug],
+    TEAM_ADDRESSES[chain.slug],
     TeamABI
   )
 
   const { contract: citizenConract } = useContract(
-    CITIZEN_ADDRESSES[selectedChain.slug]
+    CITIZEN_ADDRESSES[chain.slug]
   )
 
   const { contract: jobTableContract } = useContract(
-    JOBS_TABLE_ADDRESSES[selectedChain.slug],
+    JOBS_TABLE_ADDRESSES[chain.slug],
     JobBoardTableABI
   )
 
   const { contract: marketplaceTableContract } = useContract(
-    MARKETPLACE_TABLE_ADDRESSES[selectedChain.slug],
+    MARKETPLACE_TABLE_ADDRESSES[chain.slug],
     MarketplaceTableABI
   )
 
@@ -115,12 +108,10 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
     isLoading: isLoadingTeamData,
   } = useTeamData(teamContract, hatsContract, nft)
   //Hats
-  const hats = useSubHats(selectedChain, adminHatId)
+  const hats = useSubHats(chain, adminHatId)
 
   //Entity Balances
-  const { contract: mooneyContract } = useContract(
-    MOONEY_ADDRESSES[selectedChain.slug]
-  )
+  const { contract: mooneyContract } = useContract(MOONEY_ADDRESSES[chain.slug])
   const { data: MOONEYBalance } = useMOONEYBalance(mooneyContract, nft?.owner)
 
   const [nativeBalance, setNativeBalance] = useState<number>(0)
@@ -297,41 +288,41 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
 
                     {/*Subscription Extension Container*/}
                     {/* {isManager || address === nft.owner ? (
-                      <div id="manager-container" className="relative">
-                        {expiresAt && (
-                          <div id="expires-container" className="">
-                            <div
-                              id="extend-sub-button-container"
-                              className="overflow-hidden text-sm"
-                            >
+                        <div id="manager-container" className="relative">
+                          {expiresAt && (
+                            <div id="expires-container" className="">
                               <div
-                                id="extend-sub-button"
-                                className="gradient-2 rounded-[2vmax] rounded-tl-[10px] md:rounded-tl-[2vmax] md:rounded-bl-[10px]"
+                                id="extend-sub-button-container"
+                                className="overflow-hidden text-sm"
                               >
-                                <Button
-                                  onClick={() => {
-                                    setTeamSubscriptionModalEnabled(true)
-                                  }}
+                                <div
+                                  id="extend-sub-button"
+                                  className="gradient-2 rounded-[2vmax] rounded-tl-[10px] md:rounded-tl-[2vmax] md:rounded-bl-[10px]"
                                 >
-                                  {'Extend Plan'}
-                                </Button>
+                                  <Button
+                                    onClick={() => {
+                                      setTeamSubscriptionModalEnabled(true)
+                                    }}
+                                  >
+                                    {'Extend Plan'}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      ) : (
+                        <></>
+                      )} */}
+                  </div>
+                  {/* {isManager || address === nft.owner ? (
+                      <p className="opacity-50 mt-2 text-sm">
+                        {'Exp: '}
+                        {new Date(expiresAt?.toString() * 1000).toLocaleString()}
+                      </p>
                     ) : (
                       <></>
                     )} */}
-                  </div>
-                  {/* {isManager || address === nft.owner ? (
-                    <p className="opacity-50 mt-2 text-sm">
-                      {'Exp: '}
-                      {new Date(expiresAt?.toString() * 1000).toLocaleString()}
-                    </p>
-                  ) : (
-                    <></>
-                  )} */}
                   <div className="mt-4">
                     <Address address={nft.owner} />
                   </div>
@@ -355,7 +346,7 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
       />
       {teamSubscriptionModalEnabled && (
         <SubscriptionModal
-          selectedChain={selectedChain}
+          selectedChain={chain}
           setEnabled={setTeamSubscriptionModalEnabled}
           nft={nft}
           validPass={subIsValid}
@@ -366,7 +357,7 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
       {teamMetadataModalEnabled && (
         <TeamMetadataModal
           nft={nft}
-          selectedChain={selectedChain}
+          selectedChain={chain}
           setEnabled={setTeamMetadataModalEnabled}
         />
       )}
@@ -478,21 +469,21 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
                         className="pr-12 my-2 flex flex-col md:flex-row justify-start items-center gap-2"
                       >
                         {/* <StandardButton
-                          className="min-w-[200px] gradient-2 rounded-[5vmax]"
-                          onClick={() => {
-                            window.open(
-                              `https://app.hatsprotocol.xyz/trees/${selectedChain.chainId}/${hatTreeId}`
-                            )
-                          }}
-                        >
-                          Manage Members
-                        </StandardButton> */}
+                            className="min-w-[200px] gradient-2 rounded-[5vmax]"
+                            onClick={() => {
+                              window.open(
+                                `https://app.hatsprotocol.xyz/trees/${selectedChain.chainId}/${hatTreeId}`
+                              )
+                            }}
+                          >
+                            Manage Members
+                          </StandardButton> */}
                         <TeamManageMembers
                           hats={hats}
                           hatsContract={hatsContract}
                           teamContract={teamContract}
                           teamId={tokenId}
-                          selectedChain={selectedChain}
+                          selectedChain={chain}
                           multisigAddress={nft.owner}
                           adminHatId={adminHatId}
                           managerHatId={managerHatId}
@@ -522,7 +513,7 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
                 isCitizen={citizen}
               />
               <TeamMarketplace
-                selectedChain={selectedChain}
+                selectedChain={chain}
                 marketplaceTableContract={marketplaceTableContract}
                 teamContract={teamContract}
                 isManager={isManager}
@@ -561,59 +552,4 @@ export default function TeamDetailPage({ tokenId, nft, imageIpfsLink }: any) {
       </ContentLayout>
     </Container>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const tokenIdOrName: any = params?.tokenIdOrName
-
-  const chain = process.env.NEXT_PUBLIC_CHAIN === 'mainnet' ? Arbitrum : Sepolia
-  const sdk = initSDK(chain)
-
-  const statement = `SELECT name, id FROM ${TEAM_TABLE_NAMES[chain.slug]}`
-  const allTeamsRes = await fetch(
-    `${TABLELAND_ENDPOINT}?statement=${statement}`
-  )
-  const allTeams = await allTeamsRes.json()
-  const { prettyLinks } = generatePrettyLinks(allTeams)
-
-  let tokenId
-  if (!Number.isNaN(Number(tokenIdOrName))) {
-    tokenId = tokenIdOrName
-  } else {
-    tokenId = prettyLinks[tokenIdOrName]
-  }
-
-  if (tokenId === undefined) {
-    return {
-      notFound: true,
-    }
-  }
-
-  const teamContract = await sdk.getContract(
-    TEAM_ADDRESSES[chain.slug],
-    TeamABI
-  )
-  const nft = await teamContract.erc721.get(tokenId)
-
-  if (
-    !nft ||
-    !nft.metadata.uri ||
-    blockedTeams.includes(Number(nft.metadata.id))
-  ) {
-    return {
-      notFound: true,
-    }
-  }
-
-  const rawMetadataRes = await fetch(nft.metadata.uri)
-  const rawMetadata = await rawMetadataRes.json()
-  const imageIpfsLink = rawMetadata.image
-
-  return {
-    props: {
-      nft,
-      tokenId,
-      imageIpfsLink,
-    },
-  }
 }

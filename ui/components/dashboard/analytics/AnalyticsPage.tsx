@@ -1,7 +1,7 @@
 import useTranslation from 'next-translate/useTranslation'
 import React, { useMemo, useState } from 'react'
 import { useAssets } from '../../../lib/dashboard/hooks'
-import AnalyticsChainSelector from './AnalyticsChainSelector'
+import ChainFilterSelector from '../../thirdweb/ChainFilterSelector'
 import { AnalyticsProgress } from './AnalyticsProgress'
 import AnalyticsSkeleton from './AnalyticsSkeleton'
 import BarChart from './BarChart'
@@ -32,7 +32,7 @@ function Data({ text, value }: any) {
 }
 
 export default function AnalyticsPage({ vMooneyData }: any) {
-  const [analyticsChain, setAnalyticsChain] = useState<string>('all')
+  const [chainFilter, setChainFilter] = useState<string>('all')
 
   const { tokens } = useAssets()
 
@@ -40,10 +40,10 @@ export default function AnalyticsPage({ vMooneyData }: any) {
 
   const circulatingMooneyStaked = useMemo(() => {
     return (
-      (vMooneyData?.totals[analyticsChain].Mooney / circulatingSupply) *
+      (vMooneyData?.totals[chainFilter].Mooney / circulatingSupply) *
       100
     ).toFixed(1)
-  }, [vMooneyData, analyticsChain, circulatingSupply])
+  }, [vMooneyData, chainFilter, circulatingSupply])
 
   const { t } = useTranslation('common')
 
@@ -65,9 +65,9 @@ export default function AnalyticsPage({ vMooneyData }: any) {
             {'Voting Power Key Figures'}
           </h1>
           <div>
-            <AnalyticsChainSelector
-              analyticsChain={analyticsChain}
-              setAnalyticsChain={setAnalyticsChain}
+            <ChainFilterSelector
+              chainFilter={chainFilter}
+              setChainFilter={setChainFilter}
             />
           </div>
         </div>
@@ -78,13 +78,13 @@ export default function AnalyticsPage({ vMooneyData }: any) {
           <Data
             text={'Total Voting Power'}
             value={Math.round(
-              vMooneyData.totals[analyticsChain].vMooney
+              vMooneyData.totals[chainFilter].vMooney
             ).toLocaleString('en-US')}
           />
           <Data
             text={'Locked $MOONEY'}
             value={Math.round(
-              vMooneyData.totals[analyticsChain].Mooney
+              vMooneyData.totals[chainFilter].Mooney
             ).toLocaleString('en-US')}
           />
           {/*Pie chart*/}

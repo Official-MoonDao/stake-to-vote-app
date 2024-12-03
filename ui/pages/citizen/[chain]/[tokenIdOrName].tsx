@@ -12,7 +12,7 @@ import { blockedCitizens } from 'const/whitelist'
 import { GetServerSideProps } from 'next'
 import { generatePrettyLinks } from '@/lib/subscription/pretty-links'
 import { initSDK } from '@/lib/thirdweb/thirdweb'
-import thirdwebShortSlugs from '@/lib/thirdweb/thirdwebShortSlugs'
+import { shortSlugsToChains } from '@/lib/thirdweb/thirdwebSlugs'
 import CitizenProfilePage from '@/components/subscription/CitizenProfilePage'
 
 type CitizenProfilePageProps = {
@@ -42,7 +42,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const chain = params?.chain as string
   const tokenIdOrName: any = params?.tokenIdOrName
   const thirdwebChain =
-    thirdwebShortSlugs[chain as keyof typeof thirdwebShortSlugs]
+    shortSlugsToChains[chain as keyof typeof shortSlugsToChains]
 
   if (!thirdwebChain) {
     return {

@@ -1,14 +1,11 @@
 import { MapIcon } from '@heroicons/react/24/outline'
-import { Arbitrum, Sepolia } from '@thirdweb-dev/chains'
 import { NFT } from '@thirdweb-dev/react'
-import { CITIZEN_ADDRESSES, TEAM_ADDRESSES } from 'const/config'
-import { blockedCitizens, blockedTeams, featuredTeams } from 'const/whitelist'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useState, useEffect, useCallback } from 'react'
-import { useChainDefault } from '@/lib/thirdweb/hooks/useChainDefault'
-import { initSDK } from '@/lib/thirdweb/thirdweb'
+import getAllValidCitizens from '@/lib/subscription/getAllValidCitizens'
+import getAllValidTeams from '@/lib/subscription/getAllValidTeams'
 import { useShallowQueryRoute } from '@/lib/utils/hooks'
 import Card from '../components/layout/Card'
 import Container from '../components/layout/Container'
@@ -21,20 +18,21 @@ import { NoticeFooter } from '@/components/layout/NoticeFooter'
 import Search from '@/components/layout/Search'
 import StandardButton from '@/components/layout/StandardButton'
 import Tab from '@/components/layout/Tab'
-import CitizenABI from '../const/abis/Citizen.json'
-import TeamABI from '../const/abis/Team.json'
+import ChainFilterSelector from '@/components/thirdweb/ChainFilterSelector'
 
 type NetworkProps = {
-  filteredTeams: NFT[]
-  filteredCitizens: NFT[]
+  validTeams: any
+  validCitizens: any
 }
 
-export default function Network({
-  filteredTeams,
-  filteredCitizens,
-}: NetworkProps) {
+export default function Network({ validTeams, validCitizens }: NetworkProps) {
   const router = useRouter()
   const shallowQueryRoute = useShallowQueryRoute()
+
+  const [teams, setTeams] = useState([])
+  const [citizens, setCitizens] = useState([])
+
+  const [chainFilter, setChainFilter] = useState('all')
 
   const [input, setInput] = useState('')
   function filterBySearch(nfts: NFT[]) {
@@ -49,19 +47,17 @@ export default function Network({
   const [tab, setTab] = useState<string>('teams')
   function loadByTab(tab: string) {
     if (tab === 'teams') {
-      setCachedNFTs(input != '' ? filterBySearch(filteredTeams) : filteredTeams)
+      setCachedNFTs(input != '' ? filterBySearch(teams) : teams)
     } else if (tab === 'citizens') {
-      setCachedNFTs(
-        input != '' ? filterBySearch(filteredCitizens) : filteredCitizens
-      )
+      setCachedNFTs(input != '' ? filterBySearch(citizens) : citizens)
     } else {
       const nfts =
-        filteredTeams?.[0] && filteredCitizens?.[0]
-          ? [...filteredTeams, ...filteredCitizens]
-          : filteredCitizens?.[0]
-          ? filteredCitizens
-          : filteredTeams?.[0]
-          ? filteredTeams
+        teams?.[0] && citizens?.[0]
+          ? [...teams, ...citizens]
+          : citizens?.[0]
+          ? citizens
+          : teams?.[0]
+          ? teams
           : []
       setCachedNFTs(input != '' ? filterBySearch(nfts) : nfts)
     }
@@ -87,16 +83,17 @@ export default function Network({
   const [maxPage, setMaxPage] = useState(1)
 
   useEffect(() => {
-    const totalTeams =
-      input != '' ? filterBySearch(filteredTeams).length : filteredTeams.length
+    const totalTeams = input != '' ? filterBySearch(teams).length : teams.length
     const totalCitizens =
       input != ''
-        ? filterBySearch(filteredCitizens).length
-        : filteredCitizens.length
+        ? filterBySearch(citizens).length
+        : citizens.length
+        ? filterBySearch(citizens).length
+        : citizens.length
 
     if (tab === 'teams') setMaxPage(Math.ceil(totalTeams / 9))
     if (tab === 'citizens') setMaxPage(Math.ceil(totalCitizens / 9))
-  }, [tab, input, filteredCitizens, filteredTeams])
+  }, [tab, input, citizens, teams])
 
   const [cachedNFTs, setCachedNFTs] = useState<NFT[]>([])
 
@@ -114,9 +111,14 @@ export default function Network({
 
   useEffect(() => {
     loadByTab(tab)
-  }, [tab, input, filteredTeams, filteredCitizens, router.query])
+  }, [tab, input, teams, citizens, router.query])
 
-  useChainDefault()
+  useEffect(() => {
+    setTeams(validTeams?.[chainFilter] || [])
+    setCitizens(validCitizens?.[chainFilter] || [])
+  }, [chainFilter, validTeams, validCitizens])
+
+  console.log(teams, citizens)
 
   const descriptionSection = (
     <div className="pt-2">
@@ -158,6 +160,10 @@ export default function Network({
             </div>
           </Frame>
         </div>
+        <ChainFilterSelector
+          chainFilter={chainFilter}
+          setChainFilter={setChainFilter}
+        />
 
         <StandardButton
           className="gradient-2 h-[40px]"
@@ -212,6 +218,7 @@ export default function Network({
                             owner={nft.owner}
                             type={type}
                             hovertext="Explore Profile"
+                            slug={nft.slug}
                           />
                         </div>
                       )
@@ -281,94 +288,13 @@ export default function Network({
 }
 
 export async function getStaticProps() {
-  const chain = process.env.NEXT_PUBLIC_CHAIN === 'mainnet' ? Arbitrum : Sepolia
-  const sdk = initSDK(chain)
-  const now = Math.floor(Date.now() / 1000)
-
-  const teamContract = await sdk.getContract(
-    TEAM_ADDRESSES[chain.slug],
-    TeamABI
-  )
-  const totalTeams = await teamContract.call('totalSupply')
-
-  const teams = [] //replace with teamContract.erc721.getAll() if all teams load
-  for (let i = 0; i < totalTeams; i++) {
-    if (!blockedTeams.includes(i)) {
-      const team = await teamContract.erc721.get(i)
-      teams.push(team)
-    }
-  }
-
-  const filteredPublicTeams: any = teams?.filter(
-    (nft: any) =>
-      nft.metadata.attributes?.find((attr: any) => attr.trait_type === 'view')
-        .value === 'public' && !blockedTeams.includes(nft.metadata.id)
-  )
-
-  const filteredValidTeams: any = filteredPublicTeams?.filter(
-    async (nft: any) => {
-      const expiresAt = await teamContract.call('expiresAt', [
-        nft?.metadata?.id,
-      ])
-
-      return expiresAt.toNumber() > now
-    }
-  )
-
-  const sortedValidTeams = filteredValidTeams
-    .reverse()
-    .sort((a: any, b: any) => {
-      const aIsFeatured = featuredTeams.includes(a.metadata.id)
-      const bIsFeatured = featuredTeams.includes(b.metadata.id)
-
-      if (aIsFeatured && bIsFeatured) {
-        return (
-          featuredTeams.indexOf(a.metadata.id) -
-          featuredTeams.indexOf(b.metadata.id)
-        )
-      } else if (aIsFeatured) {
-        return -1
-      } else if (bIsFeatured) {
-        return 1
-      } else {
-        return 0
-      }
-    })
-
-  const citizenContract = await sdk.getContract(
-    CITIZEN_ADDRESSES[chain.slug],
-    CitizenABI
-  )
-  const totalCitizens = await citizenContract.call('totalSupply')
-
-  const citizens = [] //replace with citizenContract.erc721.getAll() if all citizens load
-  for (let i = 0; i < totalCitizens.toNumber(); i++) {
-    if (!blockedCitizens.includes(i)) {
-      const citizen = await citizenContract.erc721.get(i)
-      citizens.push(citizen)
-    }
-  }
-
-  const filteredPublicCitizens: any = citizens?.filter(
-    (nft: any) =>
-      nft.metadata.attributes?.find((attr: any) => attr.trait_type === 'view')
-        .value === 'public' && !blockedCitizens.includes(nft.metadata.id)
-  )
-
-  const filteredValidCitizens: any = filteredPublicCitizens?.filter(
-    async (nft: any) => {
-      const expiresAt = await citizenContract.call('expiresAt', [
-        nft?.metadata?.id,
-      ])
-
-      return expiresAt.toNumber() > now
-    }
-  )
+  const validTeams = await getAllValidTeams()
+  const validCitizens = await getAllValidCitizens()
 
   return {
     props: {
-      filteredTeams: sortedValidTeams,
-      filteredCitizens: filteredValidCitizens.reverse(),
+      validTeams,
+      validCitizens,
     },
     revalidate: 60,
   }

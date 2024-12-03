@@ -1,14 +1,9 @@
-import { createPortal } from 'react-dom'
+import Portal from './Portal'
 
 type ModalProps = {
   id: string
   setEnabled: Function
   children: any
-}
-
-function Portal({ children }: { children: React.ReactNode }) {
-  if (typeof document === 'undefined') return null // SSR check
-  return createPortal(children, document.body)
 }
 
 export default function Modal({ id, setEnabled, children }: ModalProps) {
