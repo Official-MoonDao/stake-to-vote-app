@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
 import Portal from '../layout/Portal'
 
+<<<<<<< HEAD:ui/components/thirdweb/ChainFilterSelector.tsx
 interface ChainFilterSelectorProps {
   chainFilter: string
   setChainFilter: (chain: string) => void
@@ -15,6 +16,34 @@ export default function ChainFilterSelector({
   chainFilter,
   setChainFilter,
 }: ChainFilterSelectorProps) {
+=======
+function AnalyticsChain({ chain, selectChain }: any) {
+  return (
+    <button
+      type="button"
+      className="w-full flex items-center gap-2 bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
+      onClick={() => selectChain(chain)}
+    >
+      {chain === 'all' ? (
+        <ChartBarSquareIcon height={24} width={24} />
+      ) : (
+        <Image
+          src={`/icons/networks/${chain}.svg`}
+          width={13}
+          height={13}
+          alt="Ethereum"
+        />
+      )}
+      {chain.charAt(0).toUpperCase() + chain.slice(1)}
+    </button>
+  )
+}
+
+export default function AnalyticsChainSelector({
+  analyticsChain,
+  setAnalyticsChain,
+}: any) {
+>>>>>>> 354ccc1dbaf2ac48ff9bd286690ffa32252ddfec:ui/components/dashboard/analytics/AnalyticsChainSelector.tsx
   const [dropdown, setDropdown] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const buttonRef = useRef<HTMLDivElement>(null)
@@ -82,6 +111,7 @@ export default function ChainFilterSelector({
               left: `${dropdownPosition.left}px`,
             }}
           >
+<<<<<<< HEAD:ui/components/thirdweb/ChainFilterSelector.tsx
             <button
               type="button"
               className="w-full flex gap-2 bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
@@ -140,6 +170,13 @@ export default function ChainFilterSelector({
                 {'Sepolia'}
               </button>
             )}
+=======
+            <AnalyticsChain chain="all" selectChain={selectChain} />
+            <AnalyticsChain chain="ethereum" selectChain={selectChain} />
+            <AnalyticsChain chain="polygon" selectChain={selectChain} />
+            <AnalyticsChain chain="arbitrum" selectChain={selectChain} />
+            <AnalyticsChain chain="base" selectChain={selectChain} />
+>>>>>>> 354ccc1dbaf2ac48ff9bd286690ffa32252ddfec:ui/components/dashboard/analytics/AnalyticsChainSelector.tsx
           </div>
         </Portal>
       )}

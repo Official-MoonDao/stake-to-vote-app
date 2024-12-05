@@ -14,6 +14,7 @@ import {
   useContractRead,
   useSDK,
 } from '@thirdweb-dev/react'
+import TeamABI from 'const/abis/Team.json'
 import {
   CITIZEN_ADDRESSES,
   TEAM_ADDRESSES,
@@ -30,6 +31,7 @@ import toast from 'react-hot-toast'
 import CitizenContext from '@/lib/citizen/citizen-context'
 import { useSubHats } from '@/lib/hats/useSubHats'
 import { useTeamData } from '@/lib/team/useTeamData'
+import ChainContext from '@/lib/thirdweb/chain-context'
 import { useChainDefault } from '@/lib/thirdweb/hooks/useChainDefault'
 import { useMOONEYBalance } from '@/lib/tokens/mooney-token'
 import { TwitterIcon } from '@/components/assets'
@@ -54,19 +56,21 @@ import TeamMetadataModal from '@/components/subscription/TeamMetadataModal'
 import TeamTreasury from '@/components/subscription/TeamTreasury'
 import JobBoardTableABI from '../../const/abis/JobBoardTable.json'
 import MarketplaceTableABI from '../../const/abis/MarketplaceTable.json'
-import TeamABI from '../../const/abis/Team.json'
 
 export default function TeamProfilePage({
   chain,
   tokenId,
   nft,
   imageIpfsLink,
+  queriedListing,
+  queriedJob,
 }: any) {
   const router = useRouter()
 
   const sdk = useSDK()
   const address = useAddress()
-
+  //privy
+  const { selectedChain, setSelectedChain } = useContext(ChainContext)
   const { citizen } = useContext(CitizenContext)
   const [teamMetadataModalEnabled, setTeamMetadataModalEnabled] =
     useState(false)
@@ -341,8 +345,17 @@ export default function TeamProfilePage({
     <Container>
       <Head
         title={nft.metadata.name}
-        description={nft.metadata.description}
-        image={`https://ipfs.io/ipfs/${imageIpfsLink.split('ipfs://')[1]}`}
+        secondaryTitle={queriedListing?.title || queriedJob?.title}
+        description={
+          queriedListing?.description ||
+          queriedJob?.description ||
+          nft.metadata.description
+        }
+        image={`https://ipfs.io/ipfs/${
+          queriedListing
+            ? queriedListing.image.split('ipfs://')[1]
+            : imageIpfsLink.split('ipfs://')[1]
+        }`}
       />
       {teamSubscriptionModalEnabled && (
         <SubscriptionModal

@@ -3,6 +3,8 @@ import {
   TEAM_ADDRESSES,
   TABLELAND_ENDPOINT,
   TEAM_TABLE_NAMES,
+  JOBS_TABLE_ADDRESSES,
+  MARKETPLACE_TABLE_ADDRESSES,
 } from 'const/config'
 import { blockedTeams } from 'const/whitelist'
 import { GetServerSideProps } from 'next'
@@ -10,6 +12,8 @@ import { generatePrettyLinks } from '@/lib/subscription/pretty-links'
 import { initSDK } from '@/lib/thirdweb/thirdweb'
 import { shortSlugsToChains } from '@/lib/thirdweb/thirdwebSlugs'
 import TeamProfilePage from '@/components/subscription/TeamProfilePage'
+import JobBoardTableABI from '../../../const/abis/JobBoardTable.json'
+import MarketplaceTableABI from '../../../const/abis/MarketplaceTable.json'
 import TeamABI from '../../../const/abis/Team.json'
 
 export default function TeamProfile({
@@ -17,6 +21,8 @@ export default function TeamProfile({
   tokenId,
   nft,
   imageIpfsLink,
+  queriedJob,
+  queriedListing,
 }: any) {
   return (
     <TeamProfilePage
@@ -24,11 +30,16 @@ export default function TeamProfile({
       tokenId={tokenId}
       nft={nft}
       imageIpfsLink={imageIpfsLink}
+      queriedJob={queriedJob}
+      queriedListing={queriedListing}
     />
   )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps = async ({
+  params,
+  query,
+}) => {
   const chain = params?.chain as string
   const tokenIdOrName: any = params?.tokenIdOrName
   const thirdwebChain =
@@ -83,12 +94,51 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const rawMetadata = await rawMetadataRes.json()
   const imageIpfsLink = rawMetadata.image
 
+  //Check for a jobId in the url and get the queried job if it exists
+  const jobId = query?.job
+  let queriedJob = null
+  if (jobId !== undefined) {
+    const jobTableContract = await sdk.getContract(
+      JOBS_TABLE_ADDRESSES[thirdwebChain.slug],
+      JobBoardTableABI
+    )
+    const jobTableName = await jobTableContract.call('getTableName')
+    const jobTableStatement = `SELECT * FROM ${jobTableName} WHERE id = ${jobId}`
+    const jobRes = await fetch(
+      `${TABLELAND_ENDPOINT}?statement=${jobTableStatement}`
+    )
+    const jobData = await jobRes.json()
+    queriedJob = jobData?.[0] || null
+  }
+
+  //Check for a listingId in the url and get the queried listing if it exists
+  const listingId = query?.listing
+  let queriedListing = null
+  if (listingId !== undefined) {
+    const marketplaceTableContract = await sdk.getContract(
+      MARKETPLACE_TABLE_ADDRESSES[thirdwebChain.slug],
+      MarketplaceTableABI
+    )
+    const marketplaceTableName = await marketplaceTableContract.call(
+      'getTableName'
+    )
+    const marketplaceTableStatement = `SELECßT * FROM ${marketplaceTableName} WHERE id = ${listingId}`
+    const marketplaceRes = await fetch(
+      `${TABLELAND_ENDPOINT}?statement=${marketplaceTableStatement}`
+    )
+    const marketplaceData = await marketplaceRes.json()
+    queriedListing = marketplaceData?.[0] || null
+  }
+
   return {
     props: {
       chain: thirdwebChain,
       nft,
       tokenId,
       imageIpfsLink,
+      queriedJob,
+      queriedListing,
+      ß,
     },
   }
 }
