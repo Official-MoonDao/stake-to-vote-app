@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import { useContext, useEffect } from 'react'
 import CitizenContext from '@/lib/citizen/citizen-context'
 import { generatePrettyLinkWithId } from '@/lib/subscription/pretty-links'
+import { slugsToShortSlugs } from '@/lib/thirdweb/thirdwebSlugs'
 import Callout1 from '../components/home/Callout1'
 import Callout2 from '../components/home/Callout2'
 import Callout3 from '../components/home/Callout3'
@@ -27,7 +28,7 @@ export default function Home({ linkSource }: any) {
       citizen?.metadata?.id
     )
       router.push(
-        `/citizen/${generatePrettyLinkWithId(
+        `/citizen/${citizen?.shortSlug}/${generatePrettyLinkWithId(
           citizen?.metadata?.name as string,
           citizen?.metadata?.id
         )}`

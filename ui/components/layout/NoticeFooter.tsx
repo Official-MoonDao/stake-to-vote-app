@@ -45,7 +45,7 @@ export function NoticeFooter({
   citizenNotice = false,
 }: NoticeFooterProps) {
   const { selectedChain } = useContext(ChainContext)
-  const isCitizen = useCitizen(selectedChain)
+  const { citizen: isCitizen } = useCitizen()
 
   const [notice, setNotice] = useState({
     title: defaultTitle,

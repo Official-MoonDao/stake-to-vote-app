@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
 import Portal from '../layout/Portal'
 
-<<<<<<< HEAD:ui/components/thirdweb/ChainFilterSelector.tsx
 interface ChainFilterSelectorProps {
   chainFilter: string
   setChainFilter: (chain: string) => void
@@ -16,34 +15,6 @@ export default function ChainFilterSelector({
   chainFilter,
   setChainFilter,
 }: ChainFilterSelectorProps) {
-=======
-function AnalyticsChain({ chain, selectChain }: any) {
-  return (
-    <button
-      type="button"
-      className="w-full flex items-center gap-2 bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
-      onClick={() => selectChain(chain)}
-    >
-      {chain === 'all' ? (
-        <ChartBarSquareIcon height={24} width={24} />
-      ) : (
-        <Image
-          src={`/icons/networks/${chain}.svg`}
-          width={13}
-          height={13}
-          alt="Ethereum"
-        />
-      )}
-      {chain.charAt(0).toUpperCase() + chain.slice(1)}
-    </button>
-  )
-}
-
-export default function AnalyticsChainSelector({
-  analyticsChain,
-  setAnalyticsChain,
-}: any) {
->>>>>>> 354ccc1dbaf2ac48ff9bd286690ffa32252ddfec:ui/components/dashboard/analytics/AnalyticsChainSelector.tsx
   const [dropdown, setDropdown] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const buttonRef = useRef<HTMLDivElement>(null)
@@ -54,7 +25,12 @@ export default function AnalyticsChainSelector({
   }
 
   function handleClickOutside({ target }: any) {
-    if (target.closest('#network-selector-dropdown')) return
+    if (
+      target.closest('#network-selector-dropdown') ||
+      target.closest('#network-selector-dropdown-button')
+    ) {
+      return
+    }
     setDropdown(false)
   }
   useEffect(() => {
@@ -73,30 +49,34 @@ export default function AnalyticsChainSelector({
   }, [dropdown])
 
   return (
-    <div id="network-selector" className="w-auto flex flex-col cursor-pointer">
+    <div
+      id="network-selector"
+      className="w-auto max-w-[150px] flex flex-col cursor-pointer"
+    >
       <div
         ref={buttonRef}
         id="network-selector-dropdown-button"
-        className="flex items-center gap-2 p-2 gradient-2 rounded-lg"
-        onClick={(e) => {
-          if (e.detail === 0) return e.preventDefault()
+        className="flex items-center justify-between gap-2 p-2 gradient-2 rounded-lg"
+        onClick={() => {
           setDropdown((prev) => !prev)
         }}
       >
-        {chainFilter === 'all' ? (
-          <ChartBarSquareIcon height={24} width={24} />
-        ) : (
-          <Image
-            className="h-6 w-6"
-            src={`/icons/networks/${chainFilter}.svg`}
-            width={24}
-            height={24}
-            alt={chainFilter}
-          />
-        )}
-        <span>
-          {chainFilter.charAt(0).toUpperCase() + chainFilter.slice(1)}
-        </span>
+        <div className="flex items-center gap-2">
+          {chainFilter === 'all' ? (
+            <ChartBarSquareIcon height={24} width={24} />
+          ) : (
+            <Image
+              className="h-6 w-6"
+              src={`/icons/networks/${chainFilter}.svg`}
+              width={24}
+              height={24}
+              alt={chainFilter}
+            />
+          )}
+          <span>
+            {chainFilter.charAt(0).toUpperCase() + chainFilter.slice(1)}
+          </span>
+        </div>
         <button className={`${dropdown && 'rotate-180'}`}>
           <ChevronDownIcon height={14} width={14} />
         </button>
@@ -111,7 +91,6 @@ export default function AnalyticsChainSelector({
               left: `${dropdownPosition.left}px`,
             }}
           >
-<<<<<<< HEAD:ui/components/thirdweb/ChainFilterSelector.tsx
             <button
               type="button"
               className="w-full flex gap-2 bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
@@ -163,20 +142,13 @@ export default function AnalyticsChainSelector({
               >
                 <Image
                   src="/icons/networks/sepolia.svg"
-                  width={24}
-                  height={24}
+                  width={13}
+                  height={13}
                   alt="Sepolia"
                 />
                 {'Sepolia'}
               </button>
             )}
-=======
-            <AnalyticsChain chain="all" selectChain={selectChain} />
-            <AnalyticsChain chain="ethereum" selectChain={selectChain} />
-            <AnalyticsChain chain="polygon" selectChain={selectChain} />
-            <AnalyticsChain chain="arbitrum" selectChain={selectChain} />
-            <AnalyticsChain chain="base" selectChain={selectChain} />
->>>>>>> 354ccc1dbaf2ac48ff9bd286690ffa32252ddfec:ui/components/dashboard/analytics/AnalyticsChainSelector.tsx
           </div>
         </Portal>
       )}

@@ -16,7 +16,7 @@ export default function CitizenProfileLink({
   citizenContract,
 }: CitizenProfileLinkProps) {
   const router = useRouter()
-  const citizen = useCitizen(selectedChain, citizenContract)
+  const {citizen} = useCitizen()
 
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -26,7 +26,7 @@ export default function CitizenProfileLink({
         onClick={async () => {
           setIsLoading(true)
           await router.push(
-            `/citizen/${generatePrettyLinkWithId(
+            `/citizen/${citizen.shortSlug}/${generatePrettyLinkWithId(
               citizen.metadata.name as string,
               citizen.metadata.id
             )}`

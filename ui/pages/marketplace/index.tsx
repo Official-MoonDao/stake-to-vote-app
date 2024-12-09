@@ -9,6 +9,7 @@ import {
 } from 'const/config'
 import { useContext, useEffect, useState } from 'react'
 import CitizenContext from '@/lib/citizen/citizen-context'
+import getAllValidMarketplaceListings from '@/lib/subscription/getAllValidMarketplaceListings'
 import ChainContext from '@/lib/thirdweb/chain-context'
 import { initSDK } from '@/lib/thirdweb/thirdweb'
 import Container from '@/components/layout/Container'
@@ -21,24 +22,24 @@ import Search from '@/components/layout/Search'
 import TeamListing, {
   TeamListing as TeamListingType,
 } from '@/components/subscription/TeamListing'
+import ChainFilterSelector from '@/components/thirdweb/ChainFilterSelector'
 
 type MarketplaceProps = {
-  listings: TeamListingType[]
+  allValidListings: Record<string, TeamListingType[]>
 }
 
-export default function Marketplace({ listings }: MarketplaceProps) {
+export default function Marketplace({ allValidListings }: MarketplaceProps) {
   const { selectedChain } = useContext(ChainContext)
   const { citizen } = useContext(CitizenContext)
 
+  const [chainFilter, setChainFilter] = useState<string>('all')
+  const [listings, setListings] = useState<TeamListingType[]>()
   const [filteredListings, setFilteredListings] = useState<TeamListingType[]>()
   const [input, setInput] = useState('')
 
-  const { contract: teamContract } = useContract(
-    TEAM_ADDRESSES[selectedChain.slug]
-  )
-  const { contract: marketplaceTableContract } = useContract(
-    MARKETPLACE_TABLE_ADDRESSES[selectedChain.slug]
-  )
+  useEffect(() => {
+    setListings(allValidListings?.[chainFilter] || [])
+  }, [allValidListings, chainFilter])
 
   useEffect(() => {
     if (listings && input != '') {
@@ -61,6 +62,12 @@ export default function Marketplace({ listings }: MarketplaceProps) {
       <Frame bottomLeft="20px" topLeft="5vmax" marginBottom="10px" noPadding>
         <Search input={input} setInput={setInput} />
       </Frame>
+      <div className="mt-2">
+        <ChainFilterSelector
+          chainFilter={chainFilter}
+          setChainFilter={setChainFilter}
+        />
+      </div>
     </div>
   )
 
@@ -86,10 +93,7 @@ export default function Marketplace({ listings }: MarketplaceProps) {
               filteredListings.map((listing: TeamListingType, i: number) => (
                 <TeamListing
                   key={`team-listing-${i}`}
-                  selectedChain={selectedChain}
                   listing={listing}
-                  teamContract={teamContract}
-                  marketplaceTableContract={marketplaceTableContract}
                   teamName
                   isCitizen={citizen}
                 />
@@ -102,40 +106,11 @@ export default function Marketplace({ listings }: MarketplaceProps) {
 }
 
 export async function getStaticProps() {
-  const chain = process.env.NEXT_PUBLIC_CHAIN === 'mainnet' ? Arbitrum : Sepolia
-  const sdk = initSDK(chain)
-  const now = Math.floor(Date.now() / 1000)
-
-  const marketplaceTableContract = await sdk.getContract(
-    MARKETPLACE_TABLE_ADDRESSES[chain.slug],
-    MarketplaceABI
-  )
-  const teamContract = await sdk.getContract(
-    TEAM_ADDRESSES[chain.slug],
-    TeamABI
-  )
-
-  const marketplaceTableName = await marketplaceTableContract.call(
-    'getTableName'
-  )
-
-  const statement = `SELECT * FROM ${marketplaceTableName} WHERE (startTime = 0 OR startTime <= ${now}) AND (endTime = 0 OR endTime >= ${now}) ORDER BY id DESC`
-
-  const allListingsRes = await fetch(
-    `${TABLELAND_ENDPOINT}?statement=${statement}`
-  )
-  const allListings = await allListingsRes.json()
-
-  const validListings = allListings.filter(async (listing: TeamListingType) => {
-    const teamExpiration = await teamContract.call('expiresAt', [
-      listing.teamId,
-    ])
-    return teamExpiration.toNumber() > now
-  })
+  const allValidListings = await getAllValidMarketplaceListings()
 
   return {
     props: {
-      listings: validListings,
+      allValidListings,
     },
     revalidate: 60,
   }

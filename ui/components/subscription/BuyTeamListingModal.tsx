@@ -1,19 +1,13 @@
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { usePrivy } from '@privy-io/react-auth'
+import { Chain } from '@thirdweb-dev/chains'
+import { MediaRenderer, useAddress, useSDK } from '@thirdweb-dev/react'
+import ERC20ABI from 'const/abis/ERC20.json'
 import {
-  MediaRenderer,
-  useAddress,
-  useContract,
-  useNFT,
-  useSDK,
-} from '@thirdweb-dev/react'
-import {
-  CITIZEN_ADDRESSES,
   DAI_ADDRESSES,
   TEAM_ADDRESSES,
   MOONEY_ADDRESSES,
   USDC_ADDRESSES,
-  DEFAULT_CHAIN,
 } from 'const/config'
 import { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -21,38 +15,29 @@ import CitizenContext from '@/lib/citizen/citizen-context'
 import useCitizenEmail from '@/lib/citizen/useCitizenEmail'
 import { createSession, destroySession } from '@/lib/iron-session/iron-session'
 import useTeamEmail from '@/lib/team/useTeamEmail'
-import { useHandleRead } from '@/lib/thirdweb/hooks'
+import { initSDK } from '@/lib/thirdweb/thirdweb'
 import { TeamListing } from '@/components/subscription/TeamListing'
 import Modal from '../layout/Modal'
 import { PrivyWeb3Button } from '../privy/PrivyWeb3Button'
 
 type BuyListingModalProps = {
-  selectedChain: any
   listing: TeamListing
+  listingChain?: Chain
   recipient: string | undefined
   setEnabled: Function
 }
 
 export default function BuyTeamListingModal({
-  selectedChain,
   listing,
+  listingChain,
   recipient,
   setEnabled,
 }: BuyListingModalProps) {
   const { citizen } = useContext(CitizenContext)
-  const sdk = useSDK()
   const address = useAddress()
   const { getAccessToken } = usePrivy()
 
-  const { contract: citizenContract } = useContract(
-    CITIZEN_ADDRESSES[selectedChain.slug]
-  )
-
-  const { contract: teamContract } = useContract(
-    TEAM_ADDRESSES[selectedChain.slug]
-  )
-
-  const { data: teamNft } = useNFT(teamContract, listing.teamId)
+  const [teamNft, setTeamNft] = useState<any>()
 
   const teamEmail = useTeamEmail(teamNft)
 
@@ -66,18 +51,7 @@ export default function BuyTeamListingModal({
   })
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const { data: owns } = useHandleRead(citizenContract, 'getOwnedToken', [
-    address,
-  ])
-  const { data: citizenNft } = useNFT(citizenContract, owns)
-
-  const citizenEmail = useCitizenEmail(citizenNft)
-
-  const currencyAddresses: any = {
-    MOONEY: MOONEY_ADDRESSES[selectedChain.slug],
-    DAI: DAI_ADDRESSES[selectedChain.slug],
-    USDC: USDC_ADDRESSES[selectedChain.slug],
-  }
+  const citizenEmail = useCitizenEmail(citizen)
 
   const currencyDecimals: any = {
     ETH: 18,
@@ -86,9 +60,28 @@ export default function BuyTeamListingModal({
     USDC: 6,
   }
 
-  const { contract: currencyContract }: any = useContract(
-    currencyAddresses[listing.currency]
-  )
+  const currencyAddresses: any = {
+    MOONEY: MOONEY_ADDRESSES[listing.slug],
+    DAI: DAI_ADDRESSES[listing.slug],
+    USDC: USDC_ADDRESSES[listing.slug],
+  }
+
+  useEffect(() => {
+    async function getTeamNft() {
+      if (!listingChain) return
+      const sdk = initSDK(listingChain)
+      try {
+        const teamContract = await sdk?.getContract(
+          TEAM_ADDRESSES[listing.slug]
+        )
+        const nft = await teamContract?.erc721.get(listing.teamId)
+        setTeamNft(nft)
+      } catch (err) {
+        setTeamNft(null)
+      }
+    }
+    getTeamNft()
+  }, [listing, listingChain])
 
   useEffect(() => {
     if (citizenEmail) {
@@ -106,8 +99,12 @@ export default function BuyTeamListingModal({
     }
 
     setIsLoading(true)
+    if (!listingChain) return
+    const sdk = initSDK(listingChain)
+
     const accessToken = await getAccessToken()
     await createSession(accessToken)
+
     let receipt
     try {
       if (+listing.price <= 0) {
@@ -122,6 +119,10 @@ export default function BuyTeamListingModal({
         receipt = await tx?.wait()
       } else {
         // buy with erc20
+        const currencyContract = await sdk?.getContract(
+          currencyAddresses?.[listing.currency],
+          ERC20ABI as any
+        )
         const tx = await currencyContract?.call('transfer', [
           recipient,
           String(price * 10 ** currencyDecimals[listing.currency]),
@@ -310,7 +311,7 @@ export default function BuyTeamListingModal({
             </div>
           )}
           <PrivyWeb3Button
-            requiredChain={DEFAULT_CHAIN}
+            requiredChain={listingChain}
             label="Buy"
             action={async () => {
               if (!email || email.trim() === '' || !email.includes('@'))

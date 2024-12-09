@@ -11,6 +11,7 @@ type TierProps = {
   price: number
   onClick: () => void
   hasCitizen?: boolean
+  isLoadingCitizen?: boolean
   buttoncta: string
   tierDescription?: string
   type: string
@@ -25,7 +26,8 @@ export default function Tier({
   buttoncta,
   price,
   onClick,
-  hasCitizen = false,
+  hasCitizen,
+  isLoadingCitizen,
   type,
   compact = false,
 }: TierProps) {
@@ -50,6 +52,7 @@ export default function Tier({
             if (!compact) {
               if (!address && user) logout()
               if (!address) return login()
+              if (isLoadingCitizen) return toast.error('Loading...')
               if (hasCitizen && process.env.NEXT_PUBLIC_CHAIN === 'mainnet')
                 return toast.error('You have already registered as a citizen')
 

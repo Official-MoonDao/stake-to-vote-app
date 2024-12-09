@@ -5,6 +5,7 @@ import {
   TEAM_TABLE_NAMES,
   JOBS_TABLE_ADDRESSES,
   MARKETPLACE_TABLE_ADDRESSES,
+  TEAM_TABLE_ADDRESSES,
 } from 'const/config'
 import { blockedTeams } from 'const/whitelist'
 import { GetServerSideProps } from 'next'
@@ -15,6 +16,7 @@ import TeamProfilePage from '@/components/subscription/TeamProfilePage'
 import JobBoardTableABI from '../../../const/abis/JobBoardTable.json'
 import MarketplaceTableABI from '../../../const/abis/MarketplaceTable.json'
 import TeamABI from '../../../const/abis/Team.json'
+import TeamTableABI from '../../../const/abis/TeamTable.json'
 
 export default function TeamProfile({
   chain,
@@ -53,9 +55,13 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const sdk = initSDK(thirdwebChain)
 
-  const statement = `SELECT name, id FROM ${
-    TEAM_TABLE_NAMES[thirdwebChain.slug]
-  }`
+  const teamTableContract = await sdk?.getContract(
+    TEAM_TABLE_ADDRESSES[thirdwebChain.slug],
+    TeamTableABI
+  )
+
+  const teamTableName = await teamTableContract.call('getTableName')
+  const statement = `SELECT name, id FROM ${teamTableName}`
   const allTeamsRes = await fetch(
     `${TABLELAND_ENDPOINT}?statement=${statement}`
   )
@@ -138,7 +144,6 @@ export const getServerSideProps: GetServerSideProps = async ({
       imageIpfsLink,
       queriedJob,
       queriedListing,
-      ß,
     },
   }
 }

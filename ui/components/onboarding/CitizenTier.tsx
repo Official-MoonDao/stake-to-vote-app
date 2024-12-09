@@ -1,8 +1,7 @@
-import { useAddress, useContract } from '@thirdweb-dev/react'
-import { CITIZEN_ADDRESSES } from 'const/config'
 import { useContext } from 'react'
+import CitizenContext from '@/lib/citizen/citizen-context'
+import { useCitizen } from '@/lib/citizen/useCitizen'
 import ChainContext from '@/lib/thirdweb/chain-context'
-import { useHandleRead } from '@/lib/thirdweb/hooks'
 import Tier from '@/components/onboarding/Tier'
 
 type CitizenTierProps = {
@@ -15,14 +14,7 @@ const CitizenTier = ({
   compact = false,
 }: CitizenTierProps) => {
   const { selectedChain } = useContext(ChainContext)
-  const address = useAddress()
-
-  const { contract: citizenContract } = useContract(
-    CITIZEN_ADDRESSES[selectedChain.slug]
-  )
-  const { data: citizenBalance } = useHandleRead(citizenContract, 'balanceOf', [
-    address,
-  ])
+  const { citizen } = useContext(CitizenContext)
 
   const handleCitizenClick = () => {
     setSelectedTier('citizen')
@@ -42,7 +34,8 @@ const CitizenTier = ({
         ]}
         buttoncta={compact ? 'Learn More' : 'Become a Citizen'}
         onClick={compact ? () => {} : handleCitizenClick}
-        hasCitizen={+citizenBalance > 0}
+        hasCitizen={citizen ? true : false}
+        isLoadingCitizen={citizen === undefined}
         type="citizen"
         compact={compact}
       />

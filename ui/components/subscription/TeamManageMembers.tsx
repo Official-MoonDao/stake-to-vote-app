@@ -60,9 +60,9 @@ function HatOption({ hat }: any) {
   )
 }
 
-function TeamMemberName({ selectedChain, address }: any) {
-  const citizenNFT = useCitizen(selectedChain, undefined, address)
-  return <p className="font-bold">{citizenNFT?.metadata?.name}</p>
+function TeamMemberName({ address, selectedChain }: any) {
+  const { citizen } = useCitizen(address, selectedChain)
+  return <p className="font-bold">{citizen?.metadata?.name}</p>
 }
 
 function TeamMembers({
@@ -86,8 +86,8 @@ function TeamMembers({
         className="bg-dark-cool rounded-[1vmax] mb-2 p-5"
       >
         <TeamMemberName
-          selectedChain={selectedChain}
           address={wearer.address}
+          selectedChain={selectedChain}
         />
         <p>{`${wearer.address.slice(0, 5)}...${wearer.address.slice(-5)}`}</p>
         <div className="mt-2 flex flex-col gap-2">

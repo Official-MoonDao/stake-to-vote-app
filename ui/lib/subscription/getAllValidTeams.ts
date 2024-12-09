@@ -3,6 +3,8 @@ import TeamABI from 'const/abis/Team.json'
 import { TEAM_ADDRESSES } from 'const/config'
 import { blockedTeams, featuredTeams } from 'const/whitelist'
 import { initSDK } from '../thirdweb/thirdweb'
+import { getChain } from '../thirdweb/thirdwebChains'
+import { slugsToShortSlugs } from '../thirdweb/thirdwebSlugs'
 import { getAttribute } from '../utils/nft'
 
 export default async function getAllValidTeams() {
@@ -10,10 +12,8 @@ export default async function getAllValidTeams() {
 
   await Promise.all(
     Object.entries(TEAM_ADDRESSES).map(async ([chainSlug, address]) => {
-      if (chainSlug === 'sepolia' && process.env.NEXT_PUBLIC_ENV === 'prod')
-        return
       const now = Math.floor(Date.now() / 1000)
-      const chain = await fetchChain(chainSlug)
+      const chain = await getChain(chainSlug)
       if (!chain) return
 
       const sdk = initSDK(chain)
@@ -36,7 +36,12 @@ export default async function getAllValidTeams() {
           !blockedTeams.includes(team.metadata.id) &&
           expiresAt.toNumber() > now
         ) {
-          teams.push({ ...team, slug: chainSlug })
+          teams.push({
+            ...team,
+            slug: chainSlug,
+            shortSlug:
+              slugsToShortSlugs[chainSlug as keyof typeof slugsToShortSlugs],
+          })
         }
       }
 

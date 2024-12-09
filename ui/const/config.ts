@@ -241,6 +241,12 @@ export const TABLELAND_ENDPOINT = `https://${
   process.env.NEXT_PUBLIC_CHAIN != 'mainnet' ? 'testnets.' : ''
 }tableland.network/api/v1/query`
 
+export function getTablelandEndpoint(chainSlug: string) {
+  return `https://${
+    chainSlug === 'sepolia' || chainSlug === 'base-sepolia' ? 'testnets.' : ''
+  }tableland.network/api/v1/query`
+}
+
 export const CHAIN_TOKEN_NAMES: Index = {
   ethereum: 'ETH',
   polygon: 'MATIC',

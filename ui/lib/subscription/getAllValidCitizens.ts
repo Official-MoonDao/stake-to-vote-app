@@ -1,9 +1,9 @@
-import { fetchChain } from '@thirdweb-dev/chains'
-import { NFT } from '@thirdweb-dev/sdk'
 import CitizenABI from 'const/abis/Citizen.json'
 import { CITIZEN_ADDRESSES } from 'const/config'
 import { blockedCitizens } from 'const/whitelist'
 import { initSDK } from '../thirdweb/thirdweb'
+import { getChain } from '../thirdweb/thirdwebChains'
+import { slugsToShortSlugs } from '../thirdweb/thirdwebSlugs'
 import { getAttribute } from '../utils/nft'
 
 export default async function getAllValidCitizens() {
@@ -11,11 +11,8 @@ export default async function getAllValidCitizens() {
 
   await Promise.all(
     Object.entries(CITIZEN_ADDRESSES).map(async ([chainSlug, address]) => {
-      if (chainSlug === 'sepolia' && process.env.NEXT_PUBLIC_ENV === 'prod')
-        return
-
       const now = Math.floor(Date.now() / 1000)
-      const chain = await fetchChain(chainSlug)
+      const chain = await getChain(chainSlug)
       if (!chain) return
 
       const sdk = initSDK(chain)
@@ -38,7 +35,12 @@ export default async function getAllValidCitizens() {
           !blockedCitizens.includes(citizen.metadata.id) &&
           expiresAt.toNumber() > now
         ) {
-          citizens.push({ ...citizen, slug: chainSlug })
+          citizens.push({
+            ...citizen,
+            slug: chainSlug,
+            shortSlug:
+              slugsToShortSlugs[chainSlug as keyof typeof slugsToShortSlugs],
+          })
         }
       }
 

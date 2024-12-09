@@ -19,7 +19,7 @@ export default function useCitizenEmail(nft: any) {
       const formResponseId = getAttribute(
         nft?.metadata?.attributes,
         'formId'
-      ).value
+      )?.value
 
       try {
         const citizenFormV1Email = await fetchEmail(

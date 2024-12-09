@@ -23,9 +23,15 @@ import ChainContext from '../../lib/thirdweb/chain-context'
 import { useNativeBalance } from '../../lib/thirdweb/hooks/useNativeBalance'
 import { useENS } from '../../lib/utils/hooks/useENS'
 import { useImportToken } from '../../lib/utils/import-token'
+import { CitizenNFT } from '@/lib/citizen/citizen-context'
+import getCitizen from '@/lib/citizen/getCitizen'
 import { generatePrettyLinkWithId } from '@/lib/subscription/pretty-links'
+import { initSDK } from '@/lib/thirdweb/thirdweb'
+import { getChain } from '@/lib/thirdweb/thirdwebChains'
+import { slugsToShortSlugs } from '@/lib/thirdweb/thirdwebSlugs'
 import useWatchTokenBalance from '@/lib/tokens/hooks/useWatchTokenBalance'
 import viemChains from '@/lib/viem/viemChains'
+import CitizenABI from '../../const/abis/Citizen.json'
 import ERC20 from '../../const/abis/ERC20.json'
 import {
   CITIZEN_ADDRESSES,
@@ -212,7 +218,6 @@ export function PrivyConnectWallet({
   citizenContract,
   type,
 }: PrivyConnectWalletProps) {
-  const sdk = useSDK()
   const router = useRouter()
 
   const { selectedWallet, setSelectedWallet } = useContext(PrivyWalletContext)
@@ -230,22 +235,12 @@ export function PrivyConnectWallet({
   const { login } = useLogin({
     onComplete: async (user, isNewUser, wasAlreadyAuthenticated) => {
       //If the user signs in and wasn't already authenticated, check if they have a citizen NFT and redirect them to their profile or the guest page
-      if (!wasAlreadyAuthenticated) {
-        let citizen
-        try {
-          const citizenContract = await sdk?.getContract(
-            CITIZEN_ADDRESSES[selectedChain.slug]
-          )
-          const ownedTokenId = await citizenContract?.call('getOwnedToken', [
-            address,
-          ])
-          citizen = await citizenContract?.erc721.get(ownedTokenId)
-        } catch (err) {
-          citizen = undefined
-        }
+      if (!wasAlreadyAuthenticated && user.wallet?.address) {
+        const citizen = await getCitizen(user.wallet?.address)
+
         if (citizen) {
           router.push(
-            `/citizen/${generatePrettyLinkWithId(
+            `/citizen/${citizen.shortSlug}/${generatePrettyLinkWithId(
               citizen?.metadata?.name as string,
               citizen?.metadata?.id
             )}`

@@ -118,8 +118,6 @@ export default function Network({ validTeams, validCitizens }: NetworkProps) {
     setCitizens(validCitizens?.[chainFilter] || [])
   }, [chainFilter, validTeams, validCitizens])
 
-  console.log(teams, citizens)
-
   const descriptionSection = (
     <div className="pt-2">
       <div className="mb-4">

@@ -1,9 +1,15 @@
 import { PencilIcon, ShareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Chain } from '@thirdweb-dev/chains'
 import { MediaRenderer, useAddress } from '@thirdweb-dev/react'
-import { NFT } from '@thirdweb-dev/sdk'
+import MarketplaceTableABI from 'const/abis/MarketplaceTable.json'
+import { MARKETPLACE_TABLE_ADDRESSES, TEAM_ADDRESSES } from 'const/config'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { CitizenNFT } from '@/lib/citizen/citizen-context'
+import { initSDK } from '@/lib/thirdweb/thirdweb'
+import { getChain } from '@/lib/thirdweb/thirdwebChains'
 import useCurrUnixTime from '@/lib/utils/hooks/useCurrUnixTime'
 import { truncateTokenValue } from '@/lib/utils/numbers'
 import { daysUntilTimestamp } from '@/lib/utils/timestamp'
@@ -26,25 +32,21 @@ export type TeamListing = {
   metadata: string
   shipping: string
   tag: string
+  slug: string
+  shortSlug: string
 }
 
 type TeamListingProps = {
-  selectedChain: any
   listing: TeamListing
-  teamContract: any
-  marketplaceTableContract?: any
   refreshListings?: any
   editable?: boolean
   teamName?: boolean
   queriedListingId?: number
-  isCitizen?: NFT | boolean | undefined
+  isCitizen?: CitizenNFT | boolean | undefined
 }
 
 export default function TeamListing({
-  selectedChain,
   listing,
-  marketplaceTableContract,
-  teamContract,
   refreshListings,
   editable,
   teamName,
@@ -54,6 +56,7 @@ export default function TeamListing({
   const router = useRouter()
   const address = useAddress()
 
+  const [listingChain, setListingChain] = useState<Chain>()
   const [enabledMarketplaceListingModal, setEnabledMarketplaceListingModal] =
     useState(false)
   const [enabledBuyListingModal, setEnabledBuyListingModal] = useState(
@@ -72,9 +75,18 @@ export default function TeamListing({
   const daysUntilExpiry = daysUntilTimestamp(listing.endTime)
 
   useEffect(() => {
+    async function getListingChain() {
+      const chain = await getChain(listing.slug)
+      if (chain) setListingChain(chain)
+    }
+    getListingChain()
+  }, [listing.slug])
+
+  useEffect(() => {
     async function getTeamData() {
-      if (teamContract && listing) {
-        // Check if teamContract is defined
+      if (listing && listingChain) {
+        const sdk = initSDK(listingChain)
+        const teamContract = await sdk.getContract(TEAM_ADDRESSES[listing.slug])
         const teamNft = await teamContract.erc721.get(listing.teamId)
         setTeamData({
           name: teamNft.metadata.name,
@@ -82,8 +94,8 @@ export default function TeamListing({
         })
       }
     }
-    if (listing) getTeamData()
-  }, [listing, teamContract])
+    getTeamData()
+  }, [listing, listingChain])
 
   useEffect(() => {
     if (currTime >= listing.startTime && currTime <= listing.endTime) {
@@ -176,6 +188,12 @@ export default function TeamListing({
                 className="animate-fadeIn relative z-50 flex flex-col"
               >
                 <div className="">
+                  <Image
+                    src={`/icons/networks/${listing.slug}.svg`}
+                    width={30}
+                    height={30}
+                    alt={listing.slug}
+                  />
                   <MediaRenderer
                     className="w-full rounded-tl-[20px] rounded-tr-[5vmax] rounded-bl-[5vmax] max-w-[575px] md:max-w-[500px] pb-5 rounded-br-[5vmax] overflow-hidden"
                     width="100%"
@@ -318,15 +336,15 @@ export default function TeamListing({
               <TeamMarketplaceListingModal
                 teamId={listing.teamId}
                 setEnabled={setEnabledMarketplaceListingModal}
-                marketplaceTableContract={marketplaceTableContract}
                 listing={listing}
+                listingChain={listingChain}
                 edit
                 refreshListings={refreshListings}
               />
             )}
             {enabledBuyListingModal && (
               <BuyTeamListingModal
-                selectedChain={selectedChain}
+                listingChain={listingChain}
                 listing={listing}
                 recipient={teamData?.multisigAddress}
                 setEnabled={setEnabledBuyListingModal}
@@ -351,13 +369,19 @@ export default function TeamListing({
                   <button
                     id="delete-listing-button"
                     onClick={async (event) => {
+                      if (!listingChain) return
                       event.stopPropagation()
                       setIsDeleting(true)
+                      const sdk = initSDK(listingChain)
+                      const marketplaceTableContract = await sdk.getContract(
+                        MARKETPLACE_TABLE_ADDRESSES[listing.slug as string],
+                        MarketplaceTableABI
+                      )
                       try {
-                        await marketplaceTableContract.call('deleteFromTable', [
-                          listing.id,
-                          listing.teamId,
-                        ])
+                        await marketplaceTableContract?.call(
+                          'deleteFromTable',
+                          [listing.id, listing.teamId]
+                        )
                         setTimeout(() => {
                           refreshListings()
                           setIsDeleting(false)
@@ -368,6 +392,7 @@ export default function TeamListing({
                         setIsDeleting(false)
                       }
                     }}
+                    disabled={!listingChain}
                   >
                     <TrashIcon className="h-6 w-6 text-light-warm" />
                   </button>

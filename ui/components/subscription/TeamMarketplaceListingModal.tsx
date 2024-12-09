@@ -1,16 +1,22 @@
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { usePrivy } from '@privy-io/react-auth'
+import { Chain } from '@thirdweb-dev/chains'
 import { MediaRenderer, useContract } from '@thirdweb-dev/react'
-import { DEFAULT_CHAIN, DEPLOYED_ORIGIN, TEAM_ADDRESSES } from 'const/config'
+import MarketplaceTableABI from 'const/abis/MarketplaceTable.json'
+import {
+  DEPLOYED_ORIGIN,
+  MARKETPLACE_TABLE_ADDRESSES,
+  TEAM_ADDRESSES,
+} from 'const/config'
 import Image from 'next/image'
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import sendDiscordMessage from '@/lib/discord/sendDiscordMessage'
 import { pinBlobOrFile } from '@/lib/ipfs/pinBlobOrFile'
 import { createSession, destroySession } from '@/lib/iron-session/iron-session'
 import { generatePrettyLink } from '@/lib/subscription/pretty-links'
 import cleanData from '@/lib/tableland/cleanData'
-import ChainContext from '@/lib/thirdweb/chain-context'
+import { initSDK } from '@/lib/thirdweb/thirdweb'
 import { renameFile } from '@/lib/utils/files'
 import useCurrUnixTime from '@/lib/utils/hooks/useCurrUnixTime'
 import TeamABI from '../../const/abis/Team.json'
@@ -33,21 +39,20 @@ type TeamMarketplaceListingModalProps = {
   teamId: number
   setEnabled: Function
   refreshListings: Function
-  marketplaceTableContract: any
   edit?: boolean
   listing?: TeamListing
+  listingChain?: Chain
 }
 
 export default function TeamMarketplaceListingModal({
   teamId,
   setEnabled,
   refreshListings,
-  marketplaceTableContract,
   edit,
   listing,
+  listingChain,
 }: TeamMarketplaceListingModalProps) {
   const { getAccessToken } = usePrivy()
-  const { selectedChain } = useContext(ChainContext)
   const [isLoading, setIsLoading] = useState(false)
   const [isExpired, setIsExpired] = useState(false)
   const [isUpcoming, setIsUpcoming] = useState(false)
@@ -87,7 +92,7 @@ export default function TeamMarketplaceListingModal({
   const currTime = useCurrUnixTime()
 
   const { contract: teamContract } = useContract(
-    TEAM_ADDRESSES[selectedChain.slug],
+    TEAM_ADDRESSES[listing?.slug as string],
     TeamABI
   )
 
@@ -123,6 +128,7 @@ export default function TeamMarketplaceListingModal({
       <form
         className="w-full flex flex-col gap-2 items-start justify-start w-auto md:w-[500px] p-5  bg-gradient-to-b from-dark-cool to-darkest-cool rounded-[2vmax] h-screen md:h-auto" // Updated styles
         onSubmit={async (e) => {
+          if (!listingChain) return
           e.preventDefault()
           const accessToken = await getAccessToken()
           await createSession(accessToken)
@@ -169,6 +175,12 @@ export default function TeamMarketplaceListingModal({
             )
             imageIpfsLink = `ipfs://${imageIpfsHash}`
           }
+
+          const sdk = initSDK(listingChain)
+          const marketplaceTableContract = await sdk.getContract(
+            MARKETPLACE_TABLE_ADDRESSES[listing?.slug as string],
+            MarketplaceTableABI
+          )
 
           let tx
 
@@ -419,12 +431,10 @@ export default function TeamMarketplaceListingModal({
           <p className="opacity-60">{`Listings are marked up 10% for non-citizens`}</p>
         </div>
         <PrivyWeb3Button
-          requiredChain={DEFAULT_CHAIN}
+          requiredChain={listingChain}
           label={edit ? 'Edit Listing' : 'Add Listing'}
           type="submit"
-          isDisabled={
-            !marketplaceTableContract || !teamContract || isLoading || !isValid
-          }
+          isDisabled={!listingChain || isLoading || !isValid}
           action={() => {}}
           className={`w-full gradient-2 rounded-t0 rounded-b-[2vmax] ${
             !isValid ? 'opacity-50 cursor-not-allowed' : ''
