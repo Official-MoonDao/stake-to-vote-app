@@ -57,9 +57,6 @@ export default function Callout2() {
         </div>
       </div>
       <div className="md:pr-5">
-        <Link href="/citizen" passHref>
-          <CitizenTier setSelectedTier={() => {}} compact />
-        </Link>
       </div>
 
       <div
