@@ -17,7 +17,7 @@ export default function PartnerSection() {
             id="section-header"
             className="header font-GoodTimes text-center text-dark-cool"
           >
-            Our Network
+            Our Partners
           </h2>
           <div
             id="network-container"
@@ -30,26 +30,6 @@ export default function PartnerSection() {
               <BrandLogo
                 alt="Blue Origin Logo"
                 logo="./../assets/logo-blue-origin.svg"
-                link="/network"
-              />
-              <BrandLogo
-                alt="Intuitive Machines Logo"
-                logo="./../assets/logo-intuitive-machines.svg"
-                link="/network"
-              />
-              <BrandLogo
-                alt="Earthlight Foundation Logo"
-                logo="./../assets/logo-earthlight-foundation.svg"
-                link="/network"
-              />
-              <BrandLogo
-                alt="OpenLunar Logo"
-                logo="./../assets/logo-openlunar.svg"
-                link="/network"
-              />           
-              <BrandLogo
-                alt="Lifeship Logo"
-                logo="./../assets/logo-lifeship.svg"
                 link="/network"
               />
               <BrandLogo

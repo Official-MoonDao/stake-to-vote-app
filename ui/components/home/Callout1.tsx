@@ -1,11 +1,12 @@
 import StandardButton from '../layout/StandardButton'
+import BrandLogo from './BrandLogo'
 
 export default function Callout1() {
   return (
     <section id="callout1-section" className="bg-dark-warm md:bg-transparent">
       <div
         id="callout1-container"
-        className="md:rounded-bl-[5vmax] z-20 relative w-[100%] h-[100%] bg-white mt-[-2vmax] pt-[2vmax] pb-0 lg:pb-10"
+        className="md:rounded-bl-[5vmax] z-20 relative w-[100%] h-[100%] bg-white mt-[-2vmax] pt-[2vmax] pb-0 lg:pb-2"
       >
         <div
           id="content-container"
@@ -13,20 +14,23 @@ export default function Callout1() {
         >
           <div
             id="featured-image"
-            className=" compact-lg hide-lg feature-2 lg:min-h-[450px] mt-5 md:mr-10 w-[100%] h-[250px] md:h-[70vmax] lg:h-[60vh]"
+            className="compact-lg hide-lg feature-2 lg:min-h-[450px] mt-5 md:mr-10 w-[100%] h-[250px] md:h-[70vmax] lg:h-[60vh]"
           ></div>
           <div
             id="content"
-            className="overflow-visible relative pb-10 md:pb-10 w-[100%]"
+            className="overflow-visible relative pb-2 md:pb-2 w-[100%]"
           >
             <h1 className="header flex overflow-visible flex-col text-4xl font-GoodTimes font-bold bg-clip-text text-dark-cool bg-gradient-to-r from-red-500 to-blue-500 leading-none">
-            Bringing the Space Industry Onchain 
+              Bringing the Space Industry Onchain
             </h1>
             <p
               id="paragraph"
               className="pt-2 pb-5 text-black text-lg w-[100%] max-w-[500px]"
             >
-            The Space Acceleration Network is an onchain startup society focused on building a permanent settlement on the Moon and beyond. We aim to connect space visionaries and organizations with the funding, tools, and support needed to turn bold ideas into reality.
+              The Space Acceleration Network is an onchain startup society focused
+              on building a permanent settlement on the Moon and beyond. We aim to
+              connect space visionaries and organizations with the funding, tools,
+              and support needed to turn bold ideas into reality.
             </p>
             <StandardButton
               backgroundColor="bg-dark-cool"
@@ -40,7 +44,26 @@ export default function Callout1() {
             </StandardButton>
           </div>
         </div>
+        <section
+          id="network-section-container"
+          className="mt-5 flex justify-start bg-white rounded-br-[5vmax] md:rounded-br-[0vmax] rounded-tl-[5vmax] rounded-bl-[5vmax] mb-5"
+        >
+          <div
+            id="network-section"
+            className="w-full py-2 px-5 flex items-center flex-col max-w-[1200px]"
+          >
+            <div id="network-container" className="w-full max-w-[1200px] m-5 mb-0">
+              <div id="teams" className="flex flex-row flex-wrap justify-center">
+                <BrandLogo alt="Intuitive Machines Logo" logo="./../assets/logo-intuitive-machines.svg" link="/network" />
+                <BrandLogo alt="Earthlight Foundation Logo" logo="./../assets/logo-earthlight-foundation.svg" link="/network" />
+                <BrandLogo alt="OpenLunar Logo" logo="./../assets/logo-openlunar.svg" link="/network" />
+                <BrandLogo alt="Lifeship Logo" logo="./../assets/logo-lifeship.svg" link="/network" />
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
+
   )
 }
